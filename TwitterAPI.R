@@ -1,5 +1,3 @@
-#Example: Google Geocode
-
 #API call
 #1. base url
 #2. specific url
@@ -66,3 +64,44 @@ get_trends("New York")
 
 #tweet -- for bots building
 post_tweet("I'm a bot")
+
+
+install.packages("twitteR")
+install.packages("wordcloud")
+install.packages("tm")
+
+library("twitteR")
+library("wordcloud")
+library("tm")
+
+consumer_key <- 'SKiuZFKrK2p7njrbJWLnC91oF'
+consumer_secret <- '2bBRVu0EZ0pJIQJLjLt42p6hJKkrwsikjeE0klPnppJPo5LTo1'
+access_token <- '89095218-SMM7OMwn0VqeH96clH1LAXrZUmO83aN2Rpgg23AO8'
+access_secret <- 'GdN5ozybpudWpIhCPWFofvC5FOoPorbAbOVzedn3C3kqp'
+
+setup_twitter_oauth(consumer_key,
+                    consumer_secret,
+                    access_token,
+                    access_secret)
+
+
+#Get followers
+install.packages("rtweet")
+library(rtweet)
+
+# Retrieve a list of the accounts following a user.
+
+## get user IDs of accounts following @jgerteis
+jgerteis_flw <- get_followers("jgerteis", n = 75000)
+
+# lookup data on those accounts 
+jgerteis_flw_data <- lookup_users(jgerteis_flw$user_id) 
+
+# Or if you really want ALL of their followers:
+# how many total follows does cnn have? 
+cnn <- lookup_users("jgerteis")
+# get them all (this would take a little over 5 days) 
+jgerteis_flw <- get_followers(   "jgerteis", n = jgrteis$followers_count, 
+                            retryonratelimit = TRUE )
+
+
