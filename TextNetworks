@@ -1,0 +1,79 @@
+#Text network 
+#Example: CR10
+
+#install and attach
+#to install github packages, need to install and attach devtools
+install.packages("devtools")
+library(devtools)
+install_github("cbail/textnets")
+
+##testnet functions
+#preparing texts for network analysis
+#creating text networks
+#visualizing text networks
+#detecting themes or “topics” within text networks
+
+#import data
+library(textnets)
+data("sotu")
+View(suto)
+
+#PRE-PROCESSING
+#1) PrepText prepares texts using all types of words. 3 arguments:
+####1. textdata, a dataframe containing the texts to be analyzed and at least one additional column containing groups; 
+####2. textvar, the name of the column containing the texts as a string; --used for two-mode
+####3. groupvar, the name of the column containing the groups through which the words of those texts be linked as a string. --used for two-mode
+#also define:
+####1. node_type = "words"
+####2. tokenizer (="tweets")
+####3. pos= "all" or pos="nouns"
+####4. language
+####5. udmodel_lang: allows users to pass a previously loaded udpipe model to the function
+####6/ remove_stop_words, remove_numbers, conpound_nouns
+#Example: first speech   /// note: slice(data, row) 1L:first row
+sotu_first_speeches <- sotu %>% group_by(president) %>% slice(1L)
+prepped_sotu <- PrepText(sotu_first_speeches, groupvar = "president", textvar = "sotu_text", node_type = "groups", tokenizer = "words", pos = "nouns", remove_stop_words = TRUE, compound_nouns = TRUE)
+#PrepText output:
+#dataframe tidytext row:a word, the document that it appears in, and its overall frequency within that document.
+
+#2) PrepTextNounPhrases 
+##3uses only nouns and noun phrases (Rule, Cointet, and Bearman 2015).
+#??? verb uses nouns and verbs???
+
+#CREATE TEXT NETWORK
+sotu_text_network <- CreateTextnet(prepped_sotu)
+
+#VISUALIZATION
+#1) vitualize text network  degree cut n: show the nodes with at least n degrees
+VisTextNet(sotu_text_network, label_degree_cut = 0, betweenness = "TRUE")
+  #nodes are coloured by their modularity class (clustering?)
+
+#2) 3D interactive visualization
+VisTextNetD3(sotu_text_network)
+#save the 3D interactive network to html 
+library(htmlwidgets)
+vis <- VisTextNetD3(sotu_text_network, 
+                    prune_cut=.50,
+                    height=1000,
+                    width=1400,
+                    bound=FALSE,
+                    zoom=TRUE,
+                    charge=-30)
+saveWidget(vis, "sotu_textnet.html")
+
+#GROUP DOCUMENTS BASED ON THEIR SIMILARITY
+# TextCommunities 
+# applies the Louvain community detection algorithm 
+# uses the edge weights and determines the number of clusters within a given network. 
+# output: a dataframe with the cluster or “modularity” class to which each document or word has been assigned.
+sotu_communities <- TextCommunities(sotu_text_network)
+head(sotu_communities)
+
+#which terms are driving the clustering?
+#InterpretText 
+#outputs: words with the 10 highest TFIDF frequencies within each cluster
+top_words_modularity_classes <- InterpretText(sotu_text_network, prepped_sotu)
+head(top_words_modularity_classes)
+
+#calculate centrality
+text_centrality <- TextCentrality(sotu_text_network)
