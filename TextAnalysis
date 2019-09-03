@@ -1,0 +1,64 @@
+#GREP
+duke_web_scrape<- "Class of 2018: Senior Stories of Discovery, Learning and Serving\n\n\t\t\t\t\t\t\t" 
+grepl("Class", duke_web_scrape)
+gsub("\t", "", duke_web_scrape)
+gsub("\t|\n", "", duke_web_scrape)
+some_text<-c("This","Professor","is","not","so","great")
+some_text[grep("^[P]", some_text)]
+text_chunk<-c("[This Professor is not so Great]")
+gsub("\","", text_chunk)
+text_chunk<-c("[This Professor is not so Great]")
+gsub('\\[|\\]',"", text_chunk)
+
+#Tokenization
+load(url("https://cbail.github.io/Trump_Tweets.Rdata"))
+head(trumptweets$text)
+install.packages("tm")
+library(tm)
+trump_corpus <- Corpus(VectorSource(as.vector(trumptweets$text))) 
+trump_corpus
+
+#Tidy-Text
+install.packages("tidytext")
+library(tidytext)
+library(dplyr)
+tidy_trump_tweets<- trumptweets %>%
+    select(created_at,text) %>%
+    unnest_tokens("word", text)
+tidy_trump_tweets %>%
+  count(word) %>%
+    arrange(desc(n))
+
+#Text pre-processin
+trump_corpus <- tm_map(trump_corpus, removeWords, stopwords("english"))
+data("stop_words")
+    tidy_trump_tweets<-tidy_trump_tweets %>%
+      anti_join(stop_words)
+      
+tidy_trump_tweets %>%
+  count(word) %>%
+    arrange(desc(n))
+    
+trump_corpus <- tm_map(trump_corpus, content_transformer(removePunctuation))
+trump_corpus <- tm_map(trump_corpus, content_transformer(removeNumbers))
+tidy_trump_tweets<-tidy_trump_tweets[-grep("\\b\\d+\\b", tidy_trump_tweets$word),]
+
+#word case
+trump_corpus <- tm_map(trump_corpus,  content_transformer(tolower))
+#removing whitespace
+trump_corpus <- tm_map(trump_corpus, content_transformer(stripWhitespace))
+tidy_trump_tweets$word <- gsub("\\s+","",tidy_trump_tweets$word)
+
+#stemming
+trump_corpus  <- tm_map(trump_corpus, content_transformer(stemDocument), language = "english")
+library(SnowballC)
+  tidy_trump_tweets<-tidy_trump_tweets %>%
+      mutate_at("word", funs(wordStem((.), language="en")))
+      
+#DTM
+trump_DTM <- DocumentTermMatrix(trump_corpus, control = list(wordLengths = c(2, Inf)))
+inspect(trump_DTM[1:5,3:8])
+tidy_trump_DTM<-
+  tidy_trump_tweets %>%
+  count(created_at, word) %>%
+  cast_dtm(created_at, word, n)
